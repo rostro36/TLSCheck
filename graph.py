@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import csv
 
 
 def graphMain(tlsDict):
@@ -11,49 +12,72 @@ def format(tlsDict):
     #tlsDict == Canton->[Municipality,canton, TLS, redirect correct, people]
     valuesPlot = dict(
     )  #canton ->[TLSNormal,RedirectNormal,All,TLSPeople,RedirectPeople,AllPeople]
+    #setup national
     nationalAll = 0
     nationalPeople = 0
     nationalTLSNormal = 0
     nationalTLSPeople = 0
     nationalRedirectNormal = 0
     nationalRedirectPeople = 0
-    for canton in tlsDict:
-        TLSNormal = 0
-        RedirectNormal = 0
-        All = 0
-        TLSPeople = 0  #just TLS
-        RedirectPeople = 0  #also correct redirect
-        AllPeople = 0
-        for cityRecord in tlsDict[
-                canton]:  #[Municipality, TLS, redirect correct, people]
-            All += 1
-            cityPeople = cityRecord[4]
-            AllPeople += cityPeople
-            if cityRecord[3] == True:  #good TLS&redirect
-                RedirectNormal += 1
-                RedirectPeople += cityPeople
-            elif cityRecord[2] == True:  #good TLS&bad redirect
-                TLSNormal += 1
-                TLSPeople += cityPeople
-            else:
-                pass  #they have nothing
-        #write values to plotdict
-        valuesPlot[canton] = [
-            TLSNormal, RedirectNormal, All, TLSPeople, RedirectPeople,
-            AllPeople
-        ]
-        #update national
-        nationalAll += All
-        nationalPeople += AllPeople
-        nationalTLSNormal += TLSNormal
-        nationalTLSPeople += TLSPeople
-        nationalRedirectNormal += RedirectNormal
-        nationalRedirectPeople += RedirectPeople
-    #write national
-    valuesPlot['CH'] = [
-        nationalTLSNormal, nationalRedirectNormal, nationalAll,
-        nationalTLSPeople, nationalRedirectPeople, nationalPeople
-    ]
+    with open('municipalities.csv', 'w', newline='') as munFile:
+        with open('cantons.csv', 'w', newline='') as canFile:
+            munWriter = csv.writer(munFile)
+            canWriter = csv.writer(canFile)
+            munWriter.writerow([
+                'Municipality', 'Canton', 'TLS', 'correct redirect', 'people'
+            ])
+            canWriter.writerow([
+                'Canton', 'TLSNormal', 'RedirectNormal', 'AllNominal',
+                'TLSPeople', 'RedirectPeople', 'AllPeople'
+            ])
+            for canton in tlsDict:
+                #setup canton
+                TLSNormal = 0
+                RedirectNormal = 0
+                All = 0
+                TLSPeople = 0  #just TLS
+                RedirectPeople = 0  #also correct redirect
+                AllPeople = 0
+                for cityRecord in tlsDict[
+                        canton]:  #[Municipality,canton,  TLS, redirect correct, people]
+                    #count canton
+                    All += 1
+                    cityPeople = cityRecord[4]
+                    AllPeople += cityPeople
+                    munWriter.writerow(cityRecord)
+                    if cityRecord[3] == True:  #good TLS&redirect
+                        RedirectNormal += 1
+                        RedirectPeople += cityPeople
+                    elif cityRecord[2] == True:  #good TLS&bad redirect
+                        TLSNormal += 1
+                        TLSPeople += cityPeople
+                    else:
+                        pass  #they have nothing
+                #write values to plotdict
+                valuesPlot[canton] = [
+                    TLSNormal, RedirectNormal, All, TLSPeople, RedirectPeople,
+                    AllPeople
+                ]
+                canWriter.writerow([
+                    canton, TLSNormal, RedirectNormal, All, TLSPeople,
+                    RedirectPeople, AllPeople
+                ])
+                #update national
+                nationalAll += All
+                nationalPeople += AllPeople
+                nationalTLSNormal += TLSNormal
+                nationalTLSPeople += TLSPeople
+                nationalRedirectNormal += RedirectNormal
+                nationalRedirectPeople += RedirectPeople
+            #write national
+            valuesPlot['CH'] = [
+                nationalTLSNormal, nationalRedirectNormal, nationalAll,
+                nationalTLSPeople, nationalRedirectPeople, nationalPeople
+            ]
+            canWriter.writerow([
+                'CH', nationalTLSNormal, nationalRedirectNormal, nationalAll,
+                nationalTLSPeople, nationalRedirectPeople, nationalPeople
+            ])
     #sort iranalphabetical for better reading
     valuesKeys = sorted(valuesPlot, reverse=True)
 
@@ -62,6 +86,7 @@ def format(tlsDict):
 
 def plot(valuesPlot, valuesKeys):
     print('Start plotting.')
+    #prepare nominal values, sort by cantons
     valueCantons = valuesKeys
     valueTLSNormal = [valuesPlot[cantons][0] for cantons in valuesKeys]
     valueRedirectNormal = [valuesPlot[cantons][1] for cantons in valuesKeys]
@@ -70,6 +95,8 @@ def plot(valuesPlot, valuesKeys):
         valueAllNormal[it] - valueRedirectNormal[it] - valueTLSNormal[it]
         for it in range(len(valueAllNormal))
     ]
+
+    #prepare People values, by cantons
     valueTLSPeople = [valuesPlot[cantons][3] for cantons in valuesKeys]
     valueRedirectPeople = [valuesPlot[cantons][4] for cantons in valuesKeys]
     valueAllPeople = [valuesPlot[cantons][5] for cantons in valuesKeys]
@@ -77,7 +104,7 @@ def plot(valuesPlot, valuesKeys):
         valueAllPeople[it] - valueRedirectPeople[it] - valueTLSPeople[it]
         for it in range(len(valueAllPeople))
     ]
-    plt.gcf().subplots_adjust(bottom=0.15)
+    #nominal subplot
     plt.subplot(2, 1, 1)
     plt.title('TLS in municipalities nominal')
     plt.ylabel('Cantons')
@@ -113,9 +140,9 @@ def plot(valuesPlot, valuesKeys):
                ('Good', 'bad Redirect', 'Nothing'),
                bbox_to_anchor=(1.04, 0.5),
                loc='center left')
-
+    #per capita sub plot
     plt.subplot(2, 1, 2)
-    plt.title('TLS in municipalities per Capita')
+    plt.title('TLS in municipalities per capita')
     plt.ylabel('Cantons')
     plt.xticks([it * 10 for it in range(11)])
     plt.yticks(range(len(valueCantons)), valueCantons)
@@ -150,6 +177,7 @@ def plot(valuesPlot, valuesKeys):
                ('Good', 'bad Redirect', 'Nothing'),
                bbox_to_anchor=(1.04, 0.5),
                loc='center left')
+    #save and show
     plt.tight_layout()
     plt.savefig('graphTLS.png', dpi='figure', bbox_inches='tight')
     plt.show()

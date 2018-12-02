@@ -22,10 +22,8 @@ def processMain(mainList):
         else:
             tlsDict[canton] = [tlsEntry]
         entryCounter += 1
-        if entryCounter % 1 == 0:
+        if entryCounter % 10 == 0:
             print('Processed ' + str(entryCounter) + ' of ' + str(ALL))
-        if entryCounter == 4:
-            break
     return tlsDict
 
 

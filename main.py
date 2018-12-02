@@ -17,7 +17,6 @@ mainList = r.data.decode('UTF-8')
 print('Start processing')
 tlsDict = processMain(
     mainList)  #Canton->[Municipality, TLS, redirect correct, people]
-print(tlsDict)
 print('Start graphing')
 graphMain(tlsDict)
 print('Done')
