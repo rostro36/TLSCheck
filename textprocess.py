@@ -90,15 +90,16 @@ def checkCity(cityWikiLink):
 
 def checkTLS(cityLink):
     try:
-        r = requests.get(cityLink, headers=headers)  #get the actual site
+        r = requests.get(
+            cityLink, headers=headers, timeout=20)  #get the actual site
     except requests.exceptions.SSLError as ex:  #SSL incorrect on serverside
         print('SSLError: ' + cityLink)
         r = requests.Response()  #fake a response
         r.url = cityLink
-    except requests.exceptions.NewConnectionError as ex:
-        #no website, give benefit of doubt
-        print('no website: ' + cityLink)
-        return (True, True)
+    except requests.exceptions.Timeout as ex:
+        print('Timeout: ' + cityLink)
+        r = requests.Response()
+        r.url = cityLink
     except Exception as ex:
         print(cityLink)
         print(ex)
