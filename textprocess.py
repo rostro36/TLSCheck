@@ -28,9 +28,9 @@ def processMain(mainList):
         entryCounter += 1
         if entryCounter % 10 == 0:
             print('Processed ' + str(entryCounter) + ' of ' + str(ALL))
-        if entryCounter % 20 == 0:
-            print('sleep for 10sec')
-            time.sleep(10)
+        if entryCounter %110 ==0:
+            print('Sleep 110 secs')
+            time.sleep(110)
     return tlsDict
 
 
@@ -91,9 +91,13 @@ def checkCity(cityWikiLink):
 def checkTLS(cityLink):
     try:
         r = requests.get(
-            cityLink, headers=headers, timeout=20)  #get the actual site
+            cityLink, headers=headers, timeout=10)  #get the actual site
     except requests.exceptions.SSLError as ex:  #SSL incorrect on serverside
         print('SSLError: ' + cityLink)
+        r = requests.Response()  #fake a response
+        r.url = cityLink
+    except requests.exceptions.ConnectionError as ex:
+        print('ConnectionError: ' +cityLink)
         r = requests.Response()  #fake a response
         r.url = cityLink
     except requests.exceptions.Timeout as ex:
