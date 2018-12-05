@@ -44,6 +44,7 @@ def format(tlsDict):
                     All += 1
                     cityPeople = cityRecord[4]
                     AllPeople += cityPeople
+                    #write city to municipality csv
                     munWriter.writerow(cityRecord)
                     if cityRecord[3] == True:  #good TLS&redirect
                         RedirectNormal += 1
@@ -58,6 +59,7 @@ def format(tlsDict):
                     TLSNormal, RedirectNormal, All, TLSPeople, RedirectPeople,
                     AllPeople
                 ]
+                #write to cantons csv
                 canWriter.writerow([
                     canton, TLSNormal, RedirectNormal, All, TLSPeople,
                     RedirectPeople, AllPeople
@@ -69,7 +71,7 @@ def format(tlsDict):
                 nationalTLSPeople += TLSPeople
                 nationalRedirectNormal += RedirectNormal
                 nationalRedirectPeople += RedirectPeople
-            #write national
+            #write national in valuesPlot
             valuesPlot['CH'] = [
                 nationalTLSNormal, nationalRedirectNormal, nationalAll,
                 nationalTLSPeople, nationalRedirectPeople, nationalPeople
@@ -78,7 +80,7 @@ def format(tlsDict):
                 'CH', nationalTLSNormal, nationalRedirectNormal, nationalAll,
                 nationalTLSPeople, nationalRedirectPeople, nationalPeople
             ])
-    #sort iranalphabetical for better reading
+    #sort iralphabetical for better reading
     valuesKeys = sorted(valuesPlot, reverse=True)
 
     return (valuesPlot, valuesKeys)
@@ -86,22 +88,34 @@ def format(tlsDict):
 
 def plot(valuesPlot, valuesKeys):
     print('Start plotting.')
-    #prepare nominal values, sort by cantons
+    #prepare nominal values, sort by cantons, make it percent already
     valueCantons = valuesKeys
-    valueTLSNormal = [valuesPlot[cantons][0] for cantons in valuesKeys]
-    valueRedirectNormal = [valuesPlot[cantons][1] for cantons in valuesKeys]
     valueAllNormal = [valuesPlot[cantons][2] for cantons in valuesKeys]
+    valueTLSNormal = [
+        valuesPlot[it][0] * 100 / valueAllNormal[it]
+        for it in range(len(valueAllNormal))
+    ]
+    valueRedirectNormal = [
+        valuesPlot[it][1] * 100 / valueAllNormal[it]
+        for it in range(len(valueAllNormal))
+    ]
     valueNothingNormal = [
-        valueAllNormal[it] - valueRedirectNormal[it] - valueTLSNormal[it]
+        100 - valueRedirectNormal[it] - valueTLSNormal[it]
         for it in range(len(valueAllNormal))
     ]
 
     #prepare People values, by cantons
-    valueTLSPeople = [valuesPlot[cantons][3] for cantons in valuesKeys]
-    valueRedirectPeople = [valuesPlot[cantons][4] for cantons in valuesKeys]
     valueAllPeople = [valuesPlot[cantons][5] for cantons in valuesKeys]
-    valueNothingPeople = [
-        valueAllPeople[it] - valueRedirectPeople[it] - valueTLSPeople[it]
+    valueTLSPeople = [
+        valuesPlot[it][3] * 100 / valueAllPeople[it]
+        for it in range(len(valueAllPeople))
+    ]
+    valueRedirectPeople = [
+        valuesPlot[it][4] * 100 / valueAllPeople[it]
+        for it in range(len(valueAllPeople))
+    ]
+    valueNothingNormal = [
+        100 - valueRedirectPeople[it] - valueTLSPeople[it]
         for it in range(len(valueAllPeople))
     ]
     #nominal subplot
@@ -109,33 +123,23 @@ def plot(valuesPlot, valuesKeys):
     plt.title('TLS in municipalities nominal')
     plt.ylabel('Cantons')
     plt.xticks([it * 10 for it in range(11)])
-    plt.yticks(range(len(valueCantons)), valueCantons)
-    pRedirectN = plt.barh(
-        range(len(valueCantons)), [
-            valueRedirectNormal[it] * 100 / valueAllNormal[it]
-            for it in range(len(valueAllNormal))
-        ],
-        color='ForestGreen')
-    pTLSN = plt.barh(
-        range(len(valueCantons)), [
-            valueTLSNormal[it] * 100 / valueAllNormal[it]
-            for it in range(len(valueAllNormal))
-        ],
-        left=[
-            valueRedirectNormal[it] * 100 / valueAllNormal[it]
-            for it in range(len(valueRedirectNormal))
-        ],
-        color='Gold')
-    pNothingN = plt.barh(
-        range(len(valueCantons)), [
-            valueNothingNormal[it] * 100 / valueAllNormal[it]
-            for it in range(len(valueAllNormal))
-        ],
-        left=[
-            100 - (valueNothingNormal[it] * 100 / valueAllNormal[it])
-            for it in range(len(valueNothingNormal))
-        ],
-        color='Crimson')
+    plt.yticks([1.2 * x for x in range(len(valueCantons))], valueCantons)
+
+    #plot in municipalites without TLS, Redirect and those who are good.
+    pRedirectN = plt.barh([1.2 * x for x in range(len(valueCantons))],
+                          valueRedirectNormal,
+                          color='ForestGreen')
+    pTLSN = plt.barh([1.2 * x for x in range(len(valueCantons))],
+                     valueTLSNormal,
+                     left=valueRedirectNormal,
+                     color='Gold')
+    pNothingN = plt.barh([1.2 * x for x in range(len(valueCantons))],
+                         valueNothingNormal,
+                         left=[
+                             100 - valueNothingNormal[it]
+                             for it in range(len(valueNothingNormal))
+                         ],
+                         color='Crimson')
     plt.legend((pRedirectN[0], pTLSN[0], pNothingN[0]),
                ('Good', 'bad Redirect', 'Nothing'),
                bbox_to_anchor=(1.04, 0.5),
@@ -144,35 +148,25 @@ def plot(valuesPlot, valuesKeys):
     plt.subplot(2, 1, 2)
     plt.title('TLS in municipalities per capita')
     plt.ylabel('Cantons')
+    #make the ticks on the sides/names of cantons
     plt.xticks([it * 10 for it in range(11)])
-    plt.yticks(range(len(valueCantons)), valueCantons)
+    plt.yticks([1.2 * x for x in range(len(valueCantons))], valueCantons)
 
-    pRedirectP = plt.barh(
-        range(len(valueCantons)), [
-            valueRedirectPeople[it] * 100 / valueAllPeople[it]
-            for it in range(len(valueAllPeople))
-        ],
-        color='ForestGreen')
-    pTLSP = plt.barh(
-        range(len(valueCantons)), [
-            valueTLSPeople[it] * 100 / valueAllPeople[it]
-            for it in range(len(valueAllPeople))
-        ],
-        left=[
-            valueRedirectPeople[it] * 100 / valueAllPeople[it]
-            for it in range(len(valueRedirectPeople))
-        ],
-        color='Gold')
-    pNothingP = plt.barh(
-        range(len(valueCantons)), [
-            valueNothingPeople[it] * 100 / valueAllPeople[it]
-            for it in range(len(valueAllPeople))
-        ],
-        left=[
-            100 - (valueNothingPeople[it] * 100 / valueAllPeople[it])
-            for it in range(len(valueNothingNormal))
-        ],
-        color='Crimson')
+    #plot in municipalites without TLS, Redirect and those who are good.
+    pRedirectP = plt.barh([1.2 * x for x in range(len(valueCantons))],
+                          valueRedirectPeople,
+                          color='ForestGreen')
+    pTLSP = plt.barh([1.2 * x for x in range(len(valueCantons))],
+                     valueTLSPeople,
+                     left=valueRedirectPeople,
+                     color='Gold')
+    pNothingP = plt.barh([1.2 * x for x in range(len(valueCantons))],
+                         valueNothingPeople,
+                         left=[
+                             100 - valueNothingPeople[it]
+                             for it in range(len(valueNothingNormal))
+                         ],
+                         color='Crimson')
     plt.legend((pRedirectP[0], pTLSP[0], pNothingP[0]),
                ('Good', 'bad Redirect', 'Nothing'),
                bbox_to_anchor=(1.04, 0.5),

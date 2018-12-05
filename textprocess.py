@@ -30,6 +30,8 @@ def processMain(mainList):
         entryCounter += 1
         if entryCounter % 10 == 0:
             print('Processed ' + str(entryCounter) + ' of ' + str(ALL))
+        if entryCounter == 10:
+            break
         if entryCounter % 110 == 0:
             print('Sleep 110 secs')
             time.sleep(110)
@@ -98,7 +100,7 @@ def checkTLS(cityLink):
     if cityLink[:5] == 'https':
         cityLink = 'http' + cityLink[5:]
 
-    (TLS, responseLink) = testLink(cityLink)
+    (TLS, responseLink) = testLink(cityLink, True)
     #make responseLink&cityLink https
     if responseLink is not None:
         if not responseLink[:5] == 'https':
@@ -107,11 +109,11 @@ def checkTLS(cityLink):
         cityLink = 'https' + cityLink[4:]
     #check if HTTPS exists on https://cityLink or https://responseLink
 
-    REDIRECT = testLink(cityLink)[0] or testLink(responseLink)[0]
+    REDIRECT = testLink(cityLink, False)[0] or testLink(responseLink, False)[0]
     return (TLS, REDIRECT)
 
 
-def testLink(cityLink):
+def testLink(cityLink, MODE):  #MODE==False->HTTPS, MODE==True->HTTP
     #no response from http testLink
     if cityLink is None:
         return (False, None)
@@ -119,10 +121,12 @@ def testLink(cityLink):
         r = requests.get(
             cityLink, headers=headers, timeout=10)  #get the actual site
     except requests.exceptions.SSLError as ex:  #SSL incorrect on serverside
-        print('SSLError: ' + cityLink)
+        if MODE:  #there are too many https sites with bad Certs
+            print('SSLError: ' + cityLink)
         return (False, None)
     except requests.exceptions.ConnectionError as ex:
-        print('ConnectionError: ' + cityLink)
+        if MODE:  #https doesn't exist
+            print('ConnectionError: ' + cityLink)
         return (False, None)
     except requests.exceptions.Timeout as ex:
         print('Timeout: ' + cityLink)
