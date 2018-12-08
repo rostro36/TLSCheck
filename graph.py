@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import csv
+import time
 
 
 def graphMain(tlsDict):
@@ -19,67 +20,68 @@ def format(tlsDict):
     nationalTLSPeople = 0
     nationalRedirectNormal = 0
     nationalRedirectPeople = 0
-    with open('municipalities.csv', 'w', newline='') as munFile:
-        with open('cantons.csv', 'w', newline='') as canFile:
-            munWriter = csv.writer(munFile)
-            canWriter = csv.writer(canFile)
-            munWriter.writerow([
-                'Municipality', 'Canton', 'TLS', 'correct redirect', 'people'
-            ])
-            canWriter.writerow([
-                'Canton', 'TLSNormal', 'RedirectNormal', 'AllNominal',
-                'TLSPeople', 'RedirectPeople', 'AllPeople'
-            ])
-            for canton in tlsDict:
-                #setup canton
-                TLSNormal = 0
-                RedirectNormal = 0
-                All = 0
-                TLSPeople = 0  #just TLS
-                RedirectPeople = 0  #also correct redirect
-                AllPeople = 0
-                for cityRecord in tlsDict[
-                        canton]:  #[Municipality,canton,  TLS, redirect correct, people]
-                    #count canton
-                    All += 1
-                    cityPeople = cityRecord[4]
-                    AllPeople += cityPeople
-                    #write city to municipality csv
-                    munWriter.writerow(cityRecord)
-                    if cityRecord[3] == True:  #good TLS&redirect
-                        RedirectNormal += 1
-                        RedirectPeople += cityPeople
-                    elif cityRecord[2] == True:  #good TLS&bad redirect
-                        TLSNormal += 1
-                        TLSPeople += cityPeople
-                    else:
-                        pass  #they have nothing
-                #write values to plotdict
-                valuesPlot[canton] = [
-                    TLSNormal, RedirectNormal, All, TLSPeople, RedirectPeople,
-                    AllPeople
-                ]
-                #write to cantons csv
-                canWriter.writerow([
-                    canton, TLSNormal, RedirectNormal, All, TLSPeople,
-                    RedirectPeople, AllPeople
-                ])
-                #update national
-                nationalAll += All
-                nationalPeople += AllPeople
-                nationalTLSNormal += TLSNormal
-                nationalTLSPeople += TLSPeople
-                nationalRedirectNormal += RedirectNormal
-                nationalRedirectPeople += RedirectPeople
-            #write national in valuesPlot
-            valuesPlot['CH'] = [
-                nationalTLSNormal, nationalRedirectNormal, nationalAll,
-                nationalTLSPeople, nationalRedirectPeople, nationalPeople
-            ]
-            canWriter.writerow([
-                'CH', nationalTLSNormal, nationalRedirectNormal, nationalAll,
-                nationalTLSPeople, nationalRedirectPeople, nationalPeople
-            ])
+    #get DATE to give csv files a date.
+    DATE = time.strftime("%Y-%m-%d")
+    munFile = open('municipalities' + DATE + '.csv', 'w', newline='')
+    canFile = open('cantons' + DATE + '.csv', 'w', newline='')
+    munWriter = csv.writer(munFile)
+    canWriter = csv.writer(canFile)
+    munWriter.writerow(
+        ['Municipality', 'Canton', 'TLS', 'correct redirect', 'people'])
+    canWriter.writerow([
+        'Canton', 'TLSNormal', 'RedirectNormal', 'AllNominal', 'TLSPeople',
+        'RedirectPeople', 'AllPeople'
+    ])
+    for canton in tlsDict:
+        #setup canton
+        TLSNormal = 0
+        RedirectNormal = 0
+        All = 0
+        TLSPeople = 0  #just TLS
+        RedirectPeople = 0  #also correct redirect
+        AllPeople = 0
+        for cityRecord in tlsDict[
+                canton]:  #[Municipality,canton,  TLS, redirect correct, people]
+            #count canton
+            All += 1
+            cityPeople = cityRecord[4]
+            AllPeople += cityPeople
+            #write city to municipality csv
+            munWriter.writerow(cityRecord)
+            if cityRecord[3] == True:  #good TLS&redirect
+                RedirectNormal += 1
+                RedirectPeople += cityPeople
+            elif cityRecord[2] == True:  #good TLS&bad redirect
+                TLSNormal += 1
+                TLSPeople += cityPeople
+            else:
+                pass  #they have nothing
+        #write values to plotdict
+        valuesPlot[canton] = [
+            TLSNormal, RedirectNormal, All, TLSPeople, RedirectPeople,
+            AllPeople
+        ]
+        #write to cantons csv
+        canWriter.writerow([
+            canton, TLSNormal, RedirectNormal, All, TLSPeople, RedirectPeople,
+            AllPeople
+        ])
+        #update national
+        nationalAll += All
+        nationalPeople += AllPeople
+        nationalTLSNormal += TLSNormal
+        nationalTLSPeople += TLSPeople
+        nationalRedirectNormal += RedirectNormal
+        nationalRedirectPeople += RedirectPeople
+    #write national in valuesPlot
+    valuesPlot['CH'] = [
+        nationalTLSNormal, nationalRedirectNormal, nationalAll,
+        nationalTLSPeople, nationalRedirectPeople, nationalPeople
+    ]
+    canWriter.writerow([
+        'CH', nationalTLSNormal, nationalRedirectNormal, nationalAll,
+        nationalTLSPeople, nationalRedirectPeople, nationalPeople
+    ])
     #sort iralphabetical for better reading
     valuesKeys = sorted(valuesPlot, reverse=True)
 

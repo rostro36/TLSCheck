@@ -6,6 +6,7 @@ import time
 import urllib3
 
 http = urllib3.PoolManager()
+#make it look like a Firefox query.
 headers = {
     'User-Agent':
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
@@ -32,9 +33,8 @@ def processMain(mainList):
             print('Processed ' + str(entryCounter) + ' of ' + str(ALL))
         if entryCounter == 10:
             break
-        if entryCounter % 110 == 0:
-            print('Sleep 110 secs')
-            time.sleep(110)
+        #I don't want to DoS, so I have to sleep.
+        time.sleep(1)
     return tlsDict
 
 
