@@ -31,10 +31,8 @@ def processMain(mainList):
         entryCounter += 1
         if entryCounter % 10 == 0:
             print('Processed ' + str(entryCounter) + ' of ' + str(ALL))
-        if entryCounter == 10:
-            break
-        #I don't want to DoS, so I have to sleep.
-        time.sleep(1)
+            #I don't want to DoS, so I have to sleep.
+            time.sleep(5)
     return tlsDict
 
 
