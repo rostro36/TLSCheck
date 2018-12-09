@@ -1,9 +1,12 @@
+#most interesting part is the method "checkTLS".
+
 import re
 import requests
 import time
 import urllib3
-#urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-http = urllib3.PoolManager()
+
+pool = urllib3.PoolManager()
+#make it look like a Firefox query.
 headers = {
     'User-Agent':
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
@@ -16,7 +19,7 @@ def processMain(mainList):
     #get every entry of municipality for themselves, first is just start
     entries = re.split('<tr>\n<td', mainList)[1:]
     tlsDict = dict(
-    )  #Canton->[Municipality, Canton, TLS, redirect correct, people]
+    )  #Canton->[Municipality, Canton, HTTP, HTTPS, people]
     entryCounter = 0
     for municipality in entries:
         tlsEntry = processEntry(municipality)
@@ -28,9 +31,8 @@ def processMain(mainList):
         entryCounter += 1
         if entryCounter % 10 == 0:
             print('Processed ' + str(entryCounter) + ' of ' + str(ALL))
-        if entryCounter %110 ==0:
-            print('Sleep 110 secs')
-            time.sleep(110)
+            #I don't want to DoS, so I have to sleep.
+            time.sleep(10)
     return tlsDict
 
 
@@ -58,7 +60,7 @@ def processEntry(municipality):
     municipality = re.split('href="', municipality, maxsplit=1)[1]
     cityWikiLink = 'https://de.wikipedia.org'
     (CITYLINK, municipality) = re.split('"', municipality, maxsplit=1)
-    (TLS, REDIRECT) = checkCity(cityWikiLink + CITYLINK)
+    (HTTP, HTTPS) = checkCity(cityWikiLink + CITYLINK)
     #get Canton
     CANTON = re.split('</a>', municipality)[2][-2:]
     #get PEOPLE
@@ -66,13 +68,14 @@ def processEntry(municipality):
     municipality = re.split('data-sort-value="', municipality)[1]
     PEOPLE = re.split('"', municipality)[0]
     PEOPLE = int(PEOPLE)
-    return (CITY, CANTON, TLS, REDIRECT, PEOPLE)
+    return (CITY, CANTON, HTTP, HTTPS, PEOPLE)
 
 
+#get the cityLink form the cities wikipediasite
 def checkCity(cityWikiLink):
     #download cityWikiLink
     try:
-        r = http.request('GET', cityWikiLink)  #get the actual site
+        r = pool.request('GET', cityWikiLink)  #get the actual site
     except Exception as ex:
         print(ex)
         print('Internet not working')
@@ -81,6 +84,7 @@ def checkCity(cityWikiLink):
     #city has no link
     if re.search('<td><a rel="nofollow" class="external text" href="',
                  cityWiki) is None:
+        print('Municipality has no website: ' + cityWikiLink)
         return (True, True)
     cityWiki = re.split('<td><a rel="nofollow" class="external text" href="',
                         cityWiki)[1]
@@ -88,37 +92,54 @@ def checkCity(cityWikiLink):
     return checkTLS(cityLink)
 
 
+#checks if the city has a TLS or not.
 def checkTLS(cityLink):
+    #make sure all start with http-link
+    if cityLink[:5] == 'https':
+        cityLink = 'http' + cityLink[5:]
+
+    (HTTP, responseLink) = testLink(cityLink, True)
+    #make responseLink&cityLink https
+    if responseLink is not None:
+        if not responseLink[:5] == 'https':
+            responseLink = 'https' + responseLink[4:]
+    if not cityLink[:5] == 'https':
+        cityLink = 'https' + cityLink[4:]
+    #check if HTTPS exists on https://cityLink or https://responseLink
+
+    HTTPS = testLink(cityLink, False)[0] or testLink(responseLink, False)[0]
+    return (HTTP, HTTPS)
+
+
+def testLink(cityLink, MODE):  #MODE==False->HTTPS, MODE==True->HTTP
+    #no response from http testLink
+    if cityLink is None:
+        return (False, None)
     try:
         r = requests.get(
-            cityLink, headers=headers, timeout=10)  #get the actual site
+            cityLink, headers=headers, timeout=20)  #get the actual site
     except requests.exceptions.SSLError as ex:  #SSL incorrect on serverside
-        print('SSLError: ' + cityLink)
-        r = requests.Response()  #fake a response
-        r.url = cityLink
+        if MODE:  #there are too many https sites with bad Certs
+            print('SSLError: ' + cityLink)
+        return (False, None)
     except requests.exceptions.ConnectionError as ex:
-        print('ConnectionError: ' +cityLink)
-        r = requests.Response()  #fake a response
-        r.url = cityLink
+        if MODE:  #https doesn't exist
+            print('ConnectionError: ' + cityLink)
+        return (False, None)
     except requests.exceptions.Timeout as ex:
         print('Timeout: ' + cityLink)
-        r = requests.Response()
-        r.url = cityLink
+        return (False, None)
     except Exception as ex:
         print(cityLink)
         print(ex)
         print('Internet not working!')
         quit()
-    if r.url[:5] == 'https':
-        return (True, True)  #uses TLS and redirects correctly
-    else:  #maybe just wrongly directed
-        cityLink = 'https' + r.url[4:]
-        try:
-            r = requests.get(cityLink, headers=headers)  #get the actual site
-        except Exception as ex:
-            #https doesnt exist
-            return (False, False)
-        return (True, False)
+    #check if TLS
+    responseLink = r.url
+    if responseLink[:5] == 'https':
+        return (True, responseLink)
+    else:
+        return (False, responseLink)
 
 
 def getAll(mainList):
