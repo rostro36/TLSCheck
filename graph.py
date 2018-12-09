@@ -10,7 +10,7 @@ def graphMain(tlsDict):
 
 def format(tlsDict):
     print('Start formatting.')
-    #tlsDict == Canton->[Municipality,canton, TLS, redirect correct, people]
+    #tlsDict == Canton->[Municipality,canton, HTTP, HTTPS, people]
     valuesPlot = dict(
     )  #canton ->[TLSNormal,RedirectNormal,All,TLSPeople,RedirectPeople,AllPeople]
     #setup national
@@ -27,7 +27,7 @@ def format(tlsDict):
     munWriter = csv.writer(munFile)
     canWriter = csv.writer(canFile)
     munWriter.writerow(
-        ['Municipality', 'Canton', 'TLS', 'correct redirect', 'people'])
+        ['Municipality', 'Canton', 'HTTP', 'HTTPS', 'people'])
     canWriter.writerow([
         'Canton', 'TLSNormal', 'RedirectNormal', 'AllNominal', 'TLSPeople',
         'RedirectPeople', 'AllPeople'
@@ -41,17 +41,17 @@ def format(tlsDict):
         RedirectPeople = 0  #also correct redirect
         AllPeople = 0
         for cityRecord in tlsDict[
-                canton]:  #[Municipality,canton,  TLS, redirect correct, people]
+                canton]:  #[Municipality,canton,  HTTP, HTTPS, people]
             #count canton
             All += 1
             cityPeople = cityRecord[4]
             AllPeople += cityPeople
             #write city to municipality csv
             munWriter.writerow(cityRecord)
-            if cityRecord[3] == True:  #good TLS&redirect
+            if cityRecord[2] == True:  #good TLS&redirect
                 RedirectNormal += 1
                 RedirectPeople += cityPeople
-            elif cityRecord[2] == True:  #good TLS&bad redirect
+            elif cityRecord[3] == True:  #good TLS&bad redirect
                 TLSNormal += 1
                 TLSPeople += cityPeople
             else:
