@@ -31,9 +31,8 @@ def processMain(mainList):
         entryCounter += 1
         if entryCounter % 10 == 0:
             print('Processed ' + str(entryCounter) + ' of ' + str(ALL))
-            break
             #I don't want to DoS, so I have to sleep.
-            time.sleep(5)
+            time.sleep(10)
     return tlsDict
 
 
@@ -118,7 +117,7 @@ def testLink(cityLink, MODE):  #MODE==False->HTTPS, MODE==True->HTTP
         return (False, None)
     try:
         r = requests.get(
-            cityLink, headers=headers, timeout=10)  #get the actual site
+            cityLink, headers=headers, timeout=20)  #get the actual site
     except requests.exceptions.SSLError as ex:  #SSL incorrect on serverside
         if MODE:  #there are too many https sites with bad Certs
             print('SSLError: ' + cityLink)

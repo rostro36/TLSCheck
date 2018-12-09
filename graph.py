@@ -29,8 +29,8 @@ def format(tlsDict):
     munWriter.writerow(
         ['Municipality', 'Canton', 'HTTP', 'HTTPS', 'people'])
     canWriter.writerow([
-        'Canton', 'TLSNormal', 'RedirectNormal', 'AllNominal', 'TLSPeople',
-        'RedirectPeople', 'AllPeople'
+        'Canton', 'HTTPNominal', 'HTTPSNominal', 'AllNominal', 'HTTPPeople',
+        'HTTPSPeople', 'AllPeople'
     ])
     for canton in tlsDict:
         #setup canton
